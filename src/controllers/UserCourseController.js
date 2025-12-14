@@ -61,7 +61,7 @@ const getCoursesByUser = async (req, res) => {
         id: uc._id, // id của bản ghi UserCourse
         status: uc.status,
         userId: uc.user_id,
-        courseId: course._id, // ✅ ID khóa học thật
+        courseId: course.id.toString(), // ✅ ID khóa học thật
         ...course, // gộp toàn bộ field của course_id
       };
     });

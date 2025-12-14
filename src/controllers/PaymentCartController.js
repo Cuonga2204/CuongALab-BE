@@ -68,7 +68,7 @@ const vnpayReturn = async (req, res) => {
       for (const course of cart.items) {
         const exists = await UserCourse.findOne({
           user_id: cart.user_id,
-          course_id: course._id,
+          course_id: course._id.toString(),
         });
 
         if (!exists) {
@@ -77,7 +77,7 @@ const vnpayReturn = async (req, res) => {
             course_id: course._id,
           });
 
-          await Course.findByIdAndUpdate(course._id, {
+          await Course.findByIdAndUpdate(course._id.toString(), {
             $inc: { student_count: 1 },
           });
         }

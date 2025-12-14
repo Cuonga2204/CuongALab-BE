@@ -15,6 +15,7 @@ const RevenueStatsRouter = require("./RevenueStatsRouter");
 const CommentRouter = require("./CommentRouter");
 const ForumRouter = require("./ForumRouter");
 const CoursePricingRouter = require("./CoursePricingRouter");
+const QuestionBankRouter = require("./QuestionBankRouter");
 const express = require("express");
 const path = require("path");
 
@@ -42,6 +43,7 @@ const routes = (app) => {
   app.use("/api/comments", CommentRouter);
   app.use("/api/forum", ForumRouter);
   app.use("/api/course-pricing", CoursePricingRouter);
+  app.use("/api/question-bank", QuestionBankRouter);
 };
 
 module.exports = routes;
