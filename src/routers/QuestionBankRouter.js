@@ -15,7 +15,6 @@ router.delete(
   "/:formId/question/:questionIndex",
   controller.deleteQuestionFromForm
 );
-router.post("/import", controller.importFormToQuiz);
 
 // IMPORT FORM → QUIZ
 router.post("/import", controller.importFormToQuiz);

@@ -7,6 +7,7 @@ const OptionSchema = new mongoose.Schema({
 
 const SectionQuizQuestionSchema = new mongoose.Schema(
   {
+    form_question_id: { type: String, default: null },
     section_quiz_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SectionQuiz",

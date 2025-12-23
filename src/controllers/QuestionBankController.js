@@ -55,15 +55,78 @@ const getFormById = async (req, res) => {
 ============================================================ */
 const updateForm = async (req, res) => {
   try {
-    const updated = await QuestionBank.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const { id } = req.params;
 
-    if (!updated) return errorHandler(res, ERRORS.NOT_FOUND, "Form not found");
+    const oldForm = await QuestionBank.findById(id);
+    if (!oldForm) {
+      return errorHandler(res, ERRORS.NOT_FOUND, "Form not found");
+    }
 
-    return successHandler(res, updated);
+    const updatedForm = await QuestionBank.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+
+    const oldQuestions = oldForm.questions;
+    const newQuestions = updatedForm.questions;
+
+    /* ===========================
+       CASE A: UPDATE question
+    =========================== */
+    for (const q of newQuestions) {
+      await SectionQuizQuestion.updateMany(
+        { form_question_id: q._id },
+        {
+          question: q.question,
+          options: q.options,
+        }
+      );
+    }
+
+    /* ===========================
+       CASE B: DELETE question
+    =========================== */
+    for (const oldQ of oldQuestions) {
+      const stillExist = newQuestions.some(
+        (q) => String(q._id) === String(oldQ._id)
+      );
+
+      if (!stillExist) {
+        await SectionQuizQuestion.deleteMany({
+          form_question_id: oldQ._id,
+        });
+      }
+    }
+
+    /* ===========================
+       CASE C: ADD question
+    =========================== */
+    for (const newQ of newQuestions) {
+      const existedBefore = oldQuestions.some(
+        (q) => String(q._id) === String(newQ._id)
+      );
+
+      if (!existedBefore) {
+        // tìm quiz nào đã import form này
+        const imported = await SectionQuizQuestion.find({
+          form_question_id: { $in: oldQuestions.map((q) => q._id) },
+        });
+
+        const quizIds = [
+          ...new Set(imported.map((q) => String(q.section_quiz_id))),
+        ];
+
+        for (const quizId of quizIds) {
+          await SectionQuizQuestion.create({
+            section_quiz_id: quizId,
+            form_question_id: newQ._id,
+            question: newQ.question,
+            options: newQ.options,
+          });
+        }
+      }
+    }
+
+    return successHandler(res, updatedForm);
   } catch (err) {
     return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
   }
@@ -142,6 +205,7 @@ const importFormToQuiz = async (req, res) => {
           section_quiz_id: quizId,
           question: q.question,
           options: q.options,
+          form_question_id: q._id,
         })
       )
     );

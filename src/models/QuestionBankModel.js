@@ -26,7 +26,7 @@ const QuestionBankSchema = new mongoose.Schema(
   { timestamps: true }
 );
 QuestionBankSchema.set("toJSON", {
-  virtuals: true,
+  virtual: true,
   versionKey: false,
   transform(doc, ret) {
     ret.id = ret._id;
@@ -34,7 +34,7 @@ QuestionBankSchema.set("toJSON", {
   },
 });
 QuestionBankSchema.set("toObject", {
-  virtuals: true,
+  virtual: true,
   versionKey: false,
   transform(doc, ret) {
     ret.id = ret._id;

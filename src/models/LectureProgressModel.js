@@ -8,12 +8,10 @@ const LectureProgressSchema = new mongoose.Schema(
     lecture_id: { type: String, required: true },
 
     watched_seconds: { type: Number, default: 0 },
-    percentage_watched: { type: Number, default: 0 }, // % đã xem nhiều nhất
+    percentage_watched: { type: Number, default: 0 },
     is_completed: { type: Boolean, default: false },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 LectureProgressSchema.set("toJSON", {

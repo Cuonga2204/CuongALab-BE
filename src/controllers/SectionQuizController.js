@@ -139,34 +139,44 @@ const updateQuestion = async (req, res) => {
  */
 const submitQuiz = async (req, res) => {
   try {
-    const { section_quiz_id, answers, section_id, course_id, user_id } =
-      req.body;
+    const {
+      section_quiz_id,
+      answers,
+      section_id,
+      course_id,
+      user_id,
+      questions,
+    } = req.body;
 
-    const questions = await SectionQuizQuestion.find({ section_quiz_id });
+    const quiz = await SectionQuiz.findById(section_quiz_id);
+    if (!quiz) {
+      return errorHandler(res, ERRORS.NOT_FOUND, "Quiz not found");
+    }
 
     let correct = 0;
 
-    questions.forEach((q) => {
-      const userAnswer = answers.find((a) => a.question_id === q.id);
-      if (!userAnswer) return;
+    for (const q of questions) {
+      const userAnswer = answers.find((a) => String(a.question_id) === q.id);
 
-      const correctOptions = q.options
+      if (!userAnswer) {
+        continue;
+      }
+      const correctOptionIds = q.options
         .filter((opt) => opt.is_correct)
-        .map((opt) => String(opt._id));
+        .map((opt) => String(opt._id || opt.id));
 
-      const selectedOptions = userAnswer.selected_option_ids;
+      const selectedOptionIds = userAnswer.selected_option_ids.map(String);
 
       const isCorrect =
-        correctOptions.length === selectedOptions.length &&
-        correctOptions.every((id) => selectedOptions.includes(id));
+        correctOptionIds.length === selectedOptionIds.length &&
+        correctOptionIds.every((id) => selectedOptionIds.includes(id));
 
       if (isCorrect) correct++;
-    });
+    }
 
     const total = questions.length;
-    const percentage = Math.round((correct / total) * 100);
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
 
-    const quiz = await SectionQuiz.findById(section_quiz_id);
     const is_passed = percentage >= quiz.passing_percentage;
 
     let result = await SectionQuizResult.findOne({
@@ -176,16 +186,16 @@ const submitQuiz = async (req, res) => {
     });
 
     if (result) {
-      // update kết quả cũ
-      result.correct_count = correct;
-      result.total_questions = total;
-      result.percentage = percentage;
-      result.is_passed = is_passed;
-
-      await result.save();
+      // ✅ chỉ update DB nếu điểm mới cao hơn
+      if (percentage > result.percentage) {
+        result.correct_count = correct;
+        result.total_questions = total;
+        result.percentage = percentage;
+        result.is_passed = is_passed;
+        await result.save();
+      }
     } else {
-      // lần đầu làm quiz → tạo mới
-      result = await SectionQuizResult.create({
+      await SectionQuizResult.create({
         user_id,
         course_id,
         section_id,
@@ -197,8 +207,15 @@ const submitQuiz = async (req, res) => {
       });
     }
 
-    return successHandler(res, result);
+    // ✅ LUÔN TRẢ VỀ KẾT QUẢ LẦN SUBMIT HIỆN TẠI
+    return successHandler(res, {
+      correct_count: correct,
+      total_questions: total,
+      percentage,
+      is_passed,
+    });
   } catch (error) {
+    console.error("❌ submitQuiz ERROR:", error);
     return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
   }
 };

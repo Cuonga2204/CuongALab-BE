@@ -21,20 +21,26 @@ const UserCourseSchema = new mongoose.Schema(
       enum: Object.values(USER_COURSE_STATUS),
       default: USER_COURSE_STATUS.IN_PROGRESS,
     },
+
+    // ⭐ PROGRESS %
+    progress: {
+      type: Number,
+      default: 0,
+    },
+
+    last_access_at: {
+      type: Date,
+    },
   },
-  {
-    timestamps: true,
-    versionKey: false,
-  }
+  { timestamps: true, versionKey: false }
 );
 
 UserCourseSchema.index({ user_id: 1, course_id: 1 }, { unique: true });
 
-// 🧩 Chuyển _id -> id khi trả về JSON
 UserCourseSchema.set("toJSON", {
   virtual: true,
   versionKey: false,
-  transform: function (doc, ret) {
+  transform: (doc, ret) => {
     ret.id = ret._id;
     delete ret._id;
   },
