@@ -51,27 +51,65 @@ const getCoursesByUser = async (req, res) => {
     const { user_id } = req.params;
 
     const userCourses = await UserCourse.find({ user_id })
-      .populate("course_id")
-      .select("-__v");
+      .populate({
+        path: "course_id",
+        populate: {
+          path: "category_id",
+          select: "name parent_id level root_id",
+        },
+      })
+      .select("-__v")
+      .lean();
 
-    // 🔹 Chuyển dữ liệu thành dạng phẳng
     const courses = userCourses.map((uc) => {
-      const course = uc.course_id?.toObject?.() || {};
+      const course = uc.course_id || {};
+      const categoryDoc = course.category_id || null;
+
+      let category = null;
+      if (categoryDoc) {
+        const { _id, ...restCategory } = categoryDoc;
+        category = {
+          id: _id.toString(),
+          ...restCategory,
+        };
+      }
+
       return {
-        id: uc._id, // id của bản ghi UserCourse
+        id: uc._id.toString(), // UserCourse id
         status: uc.status,
-        userId: uc.user_id,
-        courseId: course.id.toString(), // ✅ ID khóa học thật
-        ...course, // gộp toàn bộ field của course_id
+        userId: uc.user_id.toString(),
+        courseId: course._id?.toString(),
+
+        // ===== COURSE FIELDS =====
+        title: course.title,
+        avatar: course.avatar,
+        price_old: course.price_old,
+        price_current: course.price_current,
+        name_teacher: course.name_teacher,
+        rating_average: course.rating_average,
+        overview: course.overview,
+        description: course.description,
+        student_count: course.student_count,
+        total_sections: course.total_sections,
+        total_lectures: course.total_lectures,
+        total_video_duration: course.total_video_duration,
+        discount_percent: course.discount_percent,
+        discount_tag: course.discount_tag,
+        is_discount_active: course.is_discount_active,
+        sale_start: course.sale_start,
+        sale_end: course.sale_end,
+
+        // ===== 🔥 CATEGORY OBJECT =====
+        category, // { id, name, level, root_id }
       };
     });
 
     return successHandler(res, courses);
-  } catch {
-    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR);
+  } catch (error) {
+    console.error(error);
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
   }
 };
-
 // 📌 4. Lấy danh sách user trong 1 khóa học
 const getUsersByCourse = async (req, res) => {
   try {

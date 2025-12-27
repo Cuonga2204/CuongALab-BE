@@ -17,6 +17,7 @@ const ForumRouter = require("./ForumRouter");
 const CoursePricingRouter = require("./CoursePricingRouter");
 const QuestionBankRouter = require("./QuestionBankRouter");
 const AdminUserCourseProgressRouter = require("./AdminUserCourseProgressRouter");
+const CategoryRouter = require("./CategoryRouter");
 const express = require("express");
 const path = require("path");
 
@@ -46,6 +47,7 @@ const routes = (app) => {
   app.use("/api/course-pricing", CoursePricingRouter);
   app.use("/api/question-bank", QuestionBankRouter);
   app.use("/api/user-progress", AdminUserCourseProgressRouter);
+  app.use("/api/categories", CategoryRouter);
 };
 
 module.exports = routes;

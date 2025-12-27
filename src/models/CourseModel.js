@@ -1,19 +1,19 @@
 const mongoose = require("mongoose");
-const { COURSE_CATEGORIES } = require("../constants/course.constants");
 
 const CourseSchema = new mongoose.Schema(
   {
-    category: {
-      type: String,
-      enum: Object.values(COURSE_CATEGORIES),
+    category_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       required: true,
+      index: true, // ⭐ phục vụ filter
     },
 
     title: { type: String, required: true },
     avatar: { type: String },
 
-    price_current: { type: Number, required: true },
-    price_old: { type: Number, required: true },
+    price_current: { type: Number },
+    price_old: { type: Number },
 
     teacher_id: {
       type: mongoose.Schema.Types.ObjectId,

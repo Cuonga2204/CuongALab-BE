@@ -12,6 +12,7 @@ router.post(
 );
 
 router.get("/get-all", courseController.getAllCourses);
+router.get("/get-all/public", courseController.getAllCoursesPublic);
 router.get("/get-detail/:id", courseController.getCourseDetails);
 
 router.get("/teacher/:teacherId", courseController.getCoursesByTeacher);
