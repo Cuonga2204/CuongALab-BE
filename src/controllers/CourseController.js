@@ -246,6 +246,67 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+const searchCoursesWithRecommend = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) {
+      return successHandler(res, {
+        results: [],
+        recommends: [],
+      });
+    }
+
+    /* ===============================
+       1. SEARCH KẾT QUẢ CHÍNH
+    =============================== */
+    const results = await Course.find({
+      title: { $regex: q, $options: "i" },
+    }).populate("category_id");
+
+    if (!results.length) {
+      return successHandler(res, {
+        results: [],
+        recommends: [],
+      });
+    }
+
+    /* ===============================
+       2. LẤY ROOT CATEGORY ID
+    =============================== */
+    const rootIds = [
+      ...new Set(
+        results.map((c) => c.category_id?.root_id?.toString()).filter(Boolean)
+      ),
+    ];
+
+    /* ===============================
+       3. LẤY CATEGORY CÙNG ROOT
+    =============================== */
+    const relatedCategories = await Category.find({
+      root_id: { $in: rootIds },
+    }).select("_id");
+
+    const relatedCategoryIds = relatedCategories.map((c) => c._id);
+
+    /* ===============================
+       4. LẤY COURSE CÙNG ROOT CATEGORY
+    =============================== */
+    const recommends = await Course.find({
+      _id: { $nin: results.map((c) => c._id) },
+      category_id: { $in: relatedCategoryIds },
+    })
+      .limit(6)
+      .populate("category_id");
+
+    return successHandler(res, {
+      results,
+      recommends,
+    });
+  } catch (error) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
+  }
+};
+
 module.exports = {
   createCourse,
   getAllCourses,
@@ -254,4 +315,5 @@ module.exports = {
   getCourseDetails,
   updateCourse,
   deleteCourse,
+  searchCoursesWithRecommend,
 };

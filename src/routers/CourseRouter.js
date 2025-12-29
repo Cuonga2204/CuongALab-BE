@@ -30,4 +30,6 @@ router.delete(
   courseController.deleteCourse
 );
 
+router.get("/search", courseController.searchCoursesWithRecommend);
+
 module.exports = router;

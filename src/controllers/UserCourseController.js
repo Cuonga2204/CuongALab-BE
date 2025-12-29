@@ -3,7 +3,7 @@ const { successHandler, errorHandler } = require("../utils/ResponseHandle");
 const { ERRORS } = require("../errors/index");
 const Course = require("../models/CourseModel");
 const User = require("../models/UserModel");
-
+const Category = require("../models/CategoryModel");
 // 📌 1. User ghi danh vào khóa học
 const enrollCourse = async (req, res) => {
   try {
@@ -139,10 +139,82 @@ const deleteEnroll = async (req, res) => {
   }
 };
 
+//recommend
+
+const recommendCoursesByUser = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    /* ===============================
+       1. LẤY COURSE USER ĐÃ MUA
+    =============================== */
+    const userCourses = await UserCourse.find({ user_id })
+      .populate({
+        path: "course_id",
+        populate: {
+          path: "category_id",
+          select: "root_id",
+        },
+      })
+      .lean();
+
+    if (!userCourses.length) {
+      return successHandler(res, []);
+    }
+
+    /* ===============================
+       2. LẤY COURSE IDS ĐÃ MUA
+    =============================== */
+    const purchasedCourseIds = userCourses
+      .map((uc) => uc.course_id?._id)
+      .filter(Boolean);
+
+    /* ===============================
+       3. LẤY ROOT CATEGORY IDS
+    =============================== */
+    const rootIds = [
+      ...new Set(
+        userCourses
+          .map((uc) => uc.course_id?.category_id?.root_id?.toString())
+          .filter(Boolean)
+      ),
+    ];
+
+    if (!rootIds.length) {
+      return successHandler(res, []);
+    }
+
+    /* ===============================
+       4. LẤY CATEGORY CÙNG ROOT
+    =============================== */
+    const relatedCategories = await Category.find({
+      root_id: { $in: rootIds },
+    }).select("_id");
+
+    const relatedCategoryIds = relatedCategories.map((c) => c._id);
+
+    /* ===============================
+       5. LẤY COURSE RECOMMEND
+    =============================== */
+    const recommends = await Course.find({
+      _id: { $nin: purchasedCourseIds }, // ❌ chưa mua
+      category_id: { $in: relatedCategoryIds },
+    })
+      .limit(8)
+      .populate("category_id");
+
+    return successHandler(res, recommends);
+  } catch (error) {
+    console.error(error);
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
+  }
+};
+
 module.exports = {
   enrollCourse,
   updateStatus,
   getCoursesByUser,
   getUsersByCourse,
   deleteEnroll,
+  recommendCoursesByUser,
 };

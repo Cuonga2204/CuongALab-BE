@@ -39,5 +39,6 @@ router.get(
 
 // Xóa ghi danh
 router.delete("/:id", authUserMiddleware, userCourseController.deleteEnroll);
-
+//recommend
+router.get("/recommend/:user_id", userCourseController.recommendCoursesByUser);
 module.exports = router;
