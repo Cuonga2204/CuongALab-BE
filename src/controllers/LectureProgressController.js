@@ -26,7 +26,7 @@ const updateProgress = async (req, res) => {
         lecture_id,
         watched_seconds,
         percentage_watched: percentage,
-        is_completed: percentage >= 95,
+        is_completed: percentage >= 80,
       });
     } else {
       progress.watched_seconds = Math.max(
@@ -43,7 +43,7 @@ const updateProgress = async (req, res) => {
         percentage
       );
 
-      progress.is_completed = progress.percentage_watched >= 95;
+      progress.is_completed = progress.percentage_watched >= 80;
 
       await progress.save();
     }

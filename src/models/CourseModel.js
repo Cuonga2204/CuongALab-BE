@@ -21,7 +21,7 @@ const CourseSchema = new mongoose.Schema(
       required: true,
     },
 
-    rating_average: { type: Number, default: 0 },
+    rating_average: { type: Number, default: 5 },
     overview: { type: String },
     description: { type: String },
 

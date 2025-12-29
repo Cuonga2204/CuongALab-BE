@@ -7,14 +7,6 @@ const LectureSchema = new mongoose.Schema(
       ref: "Section",
       required: true,
     },
-
-    // ⭐ MUST HAVE — THÊM VÀO ĐỂ FIX LỖI
-    course_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
-
     lecture_title: { type: String, required: true },
     video: { type: String, required: false },
     duration: { type: Number, default: 0 },

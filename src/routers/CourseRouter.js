@@ -31,5 +31,6 @@ router.delete(
 );
 
 router.get("/search", courseController.searchCoursesWithRecommend);
+router.get("/:courseId/progress", courseController.getCourseProgress);
 
 module.exports = router;

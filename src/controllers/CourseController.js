@@ -1,9 +1,12 @@
 const Course = require("../models/CourseModel");
 const User = require("../models/UserModel");
+const Section = require("../models/SectionModel");
 const Category = require("../models/CategoryModel");
+const Lecture = require("../models/LectureModel");
+const LectureProgress = require("../models/LectureProgressModel");
 const { successHandler, errorHandler } = require("../utils/ResponseHandle");
 const { ERRORS } = require("../errors/index");
-
+const mongoose = require("mongoose");
 const createCourse = async (req, res) => {
   try {
     const avatarPath = req.file ? req.file.path : null;
@@ -307,6 +310,78 @@ const searchCoursesWithRecommend = async (req, res) => {
   }
 };
 
+const getCourseProgress = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { userId } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid courseId",
+      });
+    }
+
+    /* =====================================================
+       1️⃣ LẤY TẤT CẢ SECTION CỦA COURSE
+    ===================================================== */
+    const sections = await Section.find({
+      course_id: courseId,
+    }).select("_id");
+
+    if (sections.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          totalLectures: 0,
+          completedLectures: 0,
+          progressPercent: 0,
+        },
+      });
+    }
+    const sectionIds = sections.map((s) => s._id);
+
+    /* =====================================================
+       2️⃣ ĐẾM TỔNG LECTURE THUỘC COURSE
+    ===================================================== */
+    const totalLectures = await Lecture.countDocuments({
+      section_id: { $in: sectionIds },
+    });
+
+    /* =====================================================
+       3️⃣ ĐẾM LECTURE ĐÃ HOÀN THÀNH
+       (LectureProgress CÓ course_id → DÙNG ĐƯỢC)
+    ===================================================== */
+    const completedLectures = await LectureProgress.countDocuments({
+      user_id: userId,
+      course_id: courseId,
+      is_completed: true,
+    });
+
+    console.log("completedLectures:", completedLectures);
+
+    /* =====================================================
+       4️⃣ TÍNH %
+    ===================================================== */
+    const progressPercent = totalLectures
+      ? Math.round((completedLectures / totalLectures) * 100)
+      : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        totalLectures,
+        completedLectures,
+        progressPercent,
+      },
+    });
+  } catch (error) {
+    console.error("getCourseProgress error:", error);
+    return res.status(500).json({ success: false });
+  }
+};
+
+module.exports = { getCourseProgress };
 module.exports = {
   createCourse,
   getAllCourses,
@@ -316,4 +391,5 @@ module.exports = {
   updateCourse,
   deleteCourse,
   searchCoursesWithRecommend,
+  getCourseProgress,
 };
