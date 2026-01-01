@@ -358,8 +358,6 @@ const getCourseProgress = async (req, res) => {
       is_completed: true,
     });
 
-    console.log("completedLectures:", completedLectures);
-
     /* =====================================================
        4️⃣ TÍNH %
     ===================================================== */
