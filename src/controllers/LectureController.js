@@ -128,46 +128,34 @@ const deleteLecture = async (req, res) => {
 const streamLecture = async (req, res) => {
   try {
     const lecture = await Lecture.findById(req.params.id);
-    if (!lecture) return errorHandler(res, ERRORS.LECTURE_NOT_FOUND);
+    if (!lecture || !lecture.video) {
+      return res.status(404).send("Video not found");
+    }
 
-    const videoUrl = lecture.video;
-    if (!videoUrl)
-      return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, "Video not found");
-
-    // Lấy Range do FE gửi lên
     const range = req.headers.range;
-
-    // Nếu không có Range => browser không tua -> gửi lỗi
     if (!range) {
       return res.status(416).send("Requires Range header");
     }
 
-    // Request tới Cloudinary có Range
-    const cloudStream = await axios({
-      method: "GET",
-      url: videoUrl,
+    const cloudRes = await axios.get(lecture.video, {
       responseType: "stream",
       headers: {
-        Range: range, // Forward range xuống Cloudinary
+        Range: range,
       },
     });
 
-    // Lấy header từ Cloudinary
-    const contentRange = cloudStream.headers["content-range"];
-    const contentLength = cloudStream.headers["content-length"];
-
-    // Set header trả về FE
     res.writeHead(206, {
-      "Content-Range": contentRange,
+      "Content-Range": cloudRes.headers["content-range"],
       "Accept-Ranges": "bytes",
-      "Content-Length": contentLength,
+      "Content-Length": cloudRes.headers["content-length"],
       "Content-Type": "video/mp4",
+      "Cache-Control": "no-store",
     });
 
-    // Stream xuống FE
-    cloudStream.data.pipe(res);
+    cloudRes.data.pipe(res);
   } catch (err) {
-    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+    console.error(err);
+    res.status(500).send("Stream error");
   }
 };
 module.exports = {
