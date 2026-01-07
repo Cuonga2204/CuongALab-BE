@@ -31,11 +31,9 @@ router.delete(
   userController.deleteUser
 );
 router.get("/get-all", userController.getAllUser);
-router.get(
-  "/get-details/:id",
-  authUserMiddleware,
-  userController.getDetailsUser
-);
+router.get("/:id", authUserMiddleware, userController.getDetailsUser);
 router.get("/teachers", userController.getTeachers);
+router.post("/onboarding", userController.submitOnboarding);
+router.post("/recommend-course", userController.recommendCourses);
 // router.post('/refresh_token', userController.refreshToken);
 module.exports = router;

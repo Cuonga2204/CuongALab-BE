@@ -1,4 +1,7 @@
 const User = require("../models/UserModel");
+const Course = require("../models/CourseModel");
+const Category = require("../models/CategoryModel");
+const { analyzeOnboarding } = require("../services/ai.service");
 require("dotenv").config();
 const JwtService = require("../services/JwtService");
 const { successHandler, errorHandler } = require("../utils/ResponseHandle");
@@ -183,6 +186,109 @@ const refreshToken = async (req, res) => {
     return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
   }
 };
+
+const submitOnboarding = async (req, res) => {
+  try {
+    const { userId, goals, level, raw_interests, description } = req.body;
+
+    if (!userId) {
+      return errorHandler(res, ERRORS.VALIDATION_ERROR, "Missing userId");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return errorHandler(res, ERRORS.USER_NOT_FOUND);
+    }
+
+    /* ===== CALL AI SERVICE ===== */
+    const aiResult = await analyzeOnboarding({
+      goals,
+      level,
+      raw_interests,
+      description,
+    });
+    /*
+      aiResult = { category_root: "ai" }
+    */
+
+    const rootCategory = await Category.findOne({
+      slug: aiResult.category_root,
+      level: 1,
+      is_active: true,
+    });
+
+    if (!rootCategory) {
+      return errorHandler(
+        res,
+        ERRORS.VALIDATION_ERROR,
+        "Invalid category root"
+      );
+    }
+
+    /* ===== SAVE LEARNING PROFILE ===== */
+    user.learning_profile = {
+      goals,
+      level,
+      raw_interests,
+      description,
+      category_root: rootCategory.slug,
+    };
+
+    user.has_onboarding = true;
+    await user.save();
+
+    return successHandler(res, user.learning_profile);
+  } catch (error) {
+    console.error("submitOnboarding error:", error);
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
+  }
+};
+
+/* ===== RECOMMEND COURSES ===== */
+const recommendCourses = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) return errorHandler(res, ERRORS.USER_NOT_FOUND);
+
+    const user = await User.findById(userId);
+    if (!user || !user.learning_profile?.category_root) {
+      return errorHandler(res, ERRORS.NOT_FOUND);
+    }
+
+    /* ===== FIND ROOT CATEGORY ===== */
+    const rootCategory = await Category.findOne({
+      slug: user.learning_profile.category_root,
+      level: 1,
+      is_active: true,
+    });
+
+    if (!rootCategory) {
+      return errorHandler(res, ERRORS.NOT_FOUND, "Category root not found");
+    }
+
+    /* ===== GET ALL SUB CATEGORIES ===== */
+    const categories = await Category.find({
+      root_id: rootCategory._id,
+      is_active: true,
+    }).select("_id");
+
+    const categoryIds = categories.map((c) => c._id);
+
+    /* ===== QUERY COURSES ===== */
+    const courses = await Course.find({
+      category_id: { $in: categoryIds },
+    })
+      .sort({ rating_average: -1 })
+      .limit(6);
+
+    return successHandler(res, courses);
+  } catch (error) {
+    console.error("recommendCourses error:", error);
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
+  }
+};
+
 module.exports = {
   createUser,
   loginUser,
@@ -192,4 +298,6 @@ module.exports = {
   getDetailsUser,
   getTeachers,
   refreshToken,
+  submitOnboarding,
+  recommendCourses,
 };

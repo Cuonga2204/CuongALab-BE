@@ -7,6 +7,23 @@ const UserSchema = new mongoose.Schema(
     role: { type: String, default: "user", required: true },
     avatar: { type: String },
     phone: { type: Number },
+    /* ===== ONBOARDING ===== */
+    learning_profile: {
+      role: String,
+      goals: [String],
+      raw_interests: [String],
+      description: String,
+      level: String,
+      category_root: {
+        type: String, // vd: "ai", "web", "backend"
+        index: true,
+      },
+    },
+
+    has_onboarding: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

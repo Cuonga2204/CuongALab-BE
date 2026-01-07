@@ -143,6 +143,12 @@ const ERRORS = {
     message: "User Course not found",
     code: 3002,
   },
+  NOT_FOUND: {
+    status: 400,
+    success: false,
+    message: "not found",
+    code: 3005,
+  },
 };
 
 module.exports = {

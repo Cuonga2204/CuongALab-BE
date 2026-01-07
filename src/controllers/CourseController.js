@@ -54,30 +54,57 @@ const getAllCourses = async (req, res) => {
 
     const courses = await Course.find()
       .populate("category_id", "name parent_id level root_id")
-      .skip((page - 1) * limit)
+      .skip((page - 1) * Number(limit))
       .limit(Number(limit))
-      .lean(); // ⭐ rất quan trọng
+      .lean();
 
     const total = await Course.countDocuments();
 
-    // ✅ MAP category_id → category
-    const mappedCourses = courses.map((c) => {
-      const { _id, category_id, ...rest } = c;
+    const mappedCourses = await Promise.all(
+      courses.map(async (c) => {
+        /* ===============================
+           1️⃣ LẤY SECTION CỦA COURSE
+        =============================== */
+        const sections = await Section.find({
+          course_id: c._id,
+        }).select("_id");
 
-      return {
-        id: _id, // ✅ map id
-        ...rest,
-        category: category_id
-          ? {
-              id: category_id._id,
-              name: category_id.name,
-              parent_id: category_id.parent_id,
-              level: category_id.level,
-              root_id: category_id.root_id,
-            }
-          : null,
-      };
-    });
+        const sectionIds = sections.map((s) => s._id);
+
+        /* ===============================
+           2️⃣ ĐẾM LECTURE
+        =============================== */
+        const totalLectures = await Lecture.countDocuments({
+          section_id: { $in: sectionIds },
+        });
+
+        /* ===============================
+           3️⃣ UPDATE COURSE STATS
+        =============================== */
+        await Course.findByIdAndUpdate(c._id, {
+          total_sections: sections.length,
+          total_lectures: totalLectures,
+        });
+
+        const { _id, category_id, ...rest } = c;
+
+        return {
+          id: _id,
+          ...rest,
+          total_sections: sections.length,
+          total_lectures: totalLectures,
+          category: category_id
+            ? {
+                id: category_id._id,
+                name: category_id.name,
+                parent_id: category_id.parent_id,
+                level: category_id.level,
+                root_id: category_id.root_id,
+              }
+            : null,
+        };
+      })
+    );
 
     return successHandler(res, {
       total,
@@ -94,28 +121,55 @@ const getAllCoursesPublic = async (req, res) => {
   try {
     const courses = await Course.find()
       .populate("category_id", "name parent_id level root_id")
-      .lean(); // ⭐ rất quan trọng
+      .lean();
 
     const total = await Course.countDocuments();
 
-    // ✅ MAP category_id → category
-    const mappedCourses = courses.map((c) => {
-      const { _id, category_id, ...rest } = c;
+    const mappedCourses = await Promise.all(
+      courses.map(async (c) => {
+        /* ===============================
+           1️⃣ LẤY SECTION
+        =============================== */
+        const sections = await Section.find({
+          course_id: c._id,
+        }).select("_id");
 
-      return {
-        id: _id, // ✅ map id
-        ...rest,
-        category: category_id
-          ? {
-              id: category_id._id,
-              name: category_id.name,
-              parent_id: category_id.parent_id,
-              level: category_id.level,
-              root_id: category_id.root_id,
-            }
-          : null,
-      };
-    });
+        const sectionIds = sections.map((s) => s._id);
+
+        /* ===============================
+           2️⃣ ĐẾM LECTURE
+        =============================== */
+        const totalLectures = await Lecture.countDocuments({
+          section_id: { $in: sectionIds },
+        });
+
+        /* ===============================
+           3️⃣ UPDATE COURSE
+        =============================== */
+        await Course.findByIdAndUpdate(c._id, {
+          total_sections: sections.length,
+          total_lectures: totalLectures,
+        });
+
+        const { _id, category_id, ...rest } = c;
+
+        return {
+          id: _id,
+          ...rest,
+          total_sections: sections.length,
+          total_lectures: totalLectures,
+          category: category_id
+            ? {
+                id: category_id._id,
+                name: category_id.name,
+                parent_id: category_id.parent_id,
+                level: category_id.level,
+                root_id: category_id.root_id,
+              }
+            : null,
+        };
+      })
+    );
 
     return successHandler(res, {
       total,
@@ -379,6 +433,38 @@ const getCourseProgress = async (req, res) => {
   }
 };
 
+const getFeaturedCourses = async (req, res) => {
+  try {
+    const courses = await Course.find()
+      .sort({ student_count: -1 }) // ⭐ nhiều học viên nhất
+      .limit(8)
+      .populate("category_id", "name parent_id level root_id")
+      .lean();
+
+    const mappedCourses = courses.map((c) => {
+      const { _id, category_id, ...rest } = c;
+
+      return {
+        id: _id,
+        ...rest,
+        category: category_id
+          ? {
+              id: category_id._id,
+              name: category_id.name,
+              parent_id: category_id.parent_id,
+              level: category_id.level,
+              root_id: category_id.root_id,
+            }
+          : null,
+      };
+    });
+
+    return successHandler(res, mappedCourses);
+  } catch (error) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, error.message);
+  }
+};
+
 module.exports = { getCourseProgress };
 module.exports = {
   createCourse,
@@ -390,4 +476,5 @@ module.exports = {
   deleteCourse,
   searchCoursesWithRecommend,
   getCourseProgress,
+  getFeaturedCourses,
 };

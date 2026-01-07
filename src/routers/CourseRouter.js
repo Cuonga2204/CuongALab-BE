@@ -32,5 +32,6 @@ router.delete(
 
 router.get("/search", courseController.searchCoursesWithRecommend);
 router.get("/:courseId/progress", courseController.getCourseProgress);
+router.get("/featured", courseController.getFeaturedCourses); // láy các khoá học nổi bật
 
 module.exports = router;
