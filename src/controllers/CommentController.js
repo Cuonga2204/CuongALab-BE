@@ -115,9 +115,64 @@ const unlikeComment = async (req, res) => {
   }
 };
 
+const deleteComment = async (req, res) => {
+  try {
+    const { commentId, userId } = req.body;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return errorHandler(res, ERRORS.NOT_FOUND, "Comment not found");
+    }
+
+    // chỉ chủ comment mới được xóa
+    if (comment.user_id.toString() !== userId) {
+      return errorHandler(res, ERRORS.UNAUTHORIZED, "Not your comment");
+    }
+
+    // ❌ XÓA TẤT CẢ COMMENT CON
+    await Comment.deleteMany({
+      parent_id: commentId,
+    });
+
+    // ❌ XÓA COMMENT CHA
+    await Comment.deleteOne({
+      _id: commentId,
+    });
+
+    return successHandler(res, {
+      deleted: true,
+      commentId,
+    });
+  } catch (err) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+  }
+};
+const editComment = async (req, res) => {
+  try {
+    const { commentId, userId, content } = req.body;
+
+    const comment = await Comment.findById(commentId);
+    if (!comment)
+      return errorHandler(res, ERRORS.NOT_FOUND, "Comment not found");
+
+    if (comment.user_id.toString() !== userId) {
+      return errorHandler(res, ERRORS.UNAUTHORIZED, "Not your comment");
+    }
+
+    comment.content = content;
+    await comment.save();
+
+    return successHandler(res, comment);
+  } catch (err) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+  }
+};
+
 module.exports = {
   addComment,
   getComments,
   likeComment,
   unlikeComment,
+  deleteComment,
+  editComment,
 };

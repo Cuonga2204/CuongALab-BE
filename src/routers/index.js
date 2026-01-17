@@ -8,7 +8,6 @@ const PaymentCartRouter = require("./PaymentCartRouter");
 const PaymentRouter = require("./PaymentRouter");
 const PaymentCourseRouter = require("./PaymentCourseRouter");
 const VideoQuizRouter = require("./VideoQuizRouter");
-const FavoriteCourseRouter = require("./FavoriteCourseRouter");
 const SectionQuizRouter = require("./SectionQuizRouter");
 const LectureProgressRouter = require("./LectureProgressRouter");
 const RevenueStatsRouter = require("./RevenueStatsRouter");
@@ -38,7 +37,6 @@ const routes = (app) => {
   app.use("/api/payment-cart", PaymentCartRouter);
   app.use("/api/payment-course", PaymentCourseRouter);
   app.use("/api/video-quiz", VideoQuizRouter);
-  app.use("/api/favorites", FavoriteCourseRouter);
   app.use("/api/section-quiz", SectionQuizRouter);
   app.use("/api/lecture-progress", LectureProgressRouter);
 

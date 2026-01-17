@@ -9,9 +9,6 @@ const LectureSchema = new mongoose.Schema(
     },
     lecture_title: { type: String, required: true },
     video: { type: String, required: false },
-    duration: { type: Number, default: 0 },
-    transcript: { type: String, default: "" },
-    captions_url: { type: String, default: "" },
     position_in_section: { type: Number, default: 0, index: true },
   },
   { timestamps: true }

@@ -2,7 +2,7 @@ const express = require("express");
 const userController = require("../controllers/UserController");
 const {
   authAdminMiddleware,
-  authUserMiddleware,
+  // authUserMiddleware,
 } = require("../middleware/Auth.middleware");
 const uploadImage = require("../middleware/uploadImage.middleware");
 const { validateRequest } = require("../middleware/validateRequest.middleware");
@@ -31,9 +31,9 @@ router.delete(
   userController.deleteUser
 );
 router.get("/get-all", userController.getAllUser);
-router.get("/:id", authUserMiddleware, userController.getDetailsUser);
 router.get("/teachers", userController.getTeachers);
 router.post("/onboarding", userController.submitOnboarding);
 router.post("/recommend-course", userController.recommendCourses);
+router.get("/:id", userController.getDetailsUser);
 // router.post('/refresh_token', userController.refreshToken);
 module.exports = router;

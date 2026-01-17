@@ -38,5 +38,13 @@ UserSchema.set("toJSON", {
     delete ret._id;
   },
 });
+UserSchema.set("toObject", {
+  virtual: true,
+  versionKey: false,
+  transform: function (doc, ret) {
+    ret.id = ret._id;
+    delete ret._id;
+  },
+});
 const User = mongoose.model("User", UserSchema);
 module.exports = User;

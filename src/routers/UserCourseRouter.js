@@ -1,10 +1,10 @@
 // routes/UserCourseRouter.js
 const express = require("express");
 const userCourseController = require("../controllers/UserCourseController");
-const {
-  authUserMiddleware,
-  // authAdminMiddleware,
-} = require("../middleware/Auth.middleware");
+// const {
+//   authUserMiddleware,
+//   authAdminMiddleware,
+// } = require("../middleware/Auth.middleware");
 const { validateRequest } = require("../middleware/validateRequest.middleware");
 const router = express.Router();
 const { UserCourseSchema } = require("../validations/userCourse/index");
@@ -38,7 +38,7 @@ router.get(
 );
 
 // Xóa ghi danh
-router.delete("/:id", authUserMiddleware, userCourseController.deleteEnroll);
+router.delete("/:id", userCourseController.deleteEnroll);
 //recommend
 router.get("/recommend/:user_id", userCourseController.recommendCoursesByUser);
 module.exports = router;
