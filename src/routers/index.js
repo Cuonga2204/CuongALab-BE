@@ -18,6 +18,7 @@ const QuestionBankRouter = require("./QuestionBankRouter");
 const AdminUserCourseProgressRouter = require("./AdminUserCourseProgressRouter");
 const CategoryRouter = require("./CategoryRouter");
 const CourseReviewRouter = require("./CourseReviewRouter");
+const UploadRouter = require("./UploadRouter");
 const express = require("express");
 const path = require("path");
 
@@ -49,6 +50,8 @@ const routes = (app) => {
   app.use("/api/categories", CategoryRouter);
   //review
   app.use("/api/course-review", CourseReviewRouter);
+  //upload
+  app.use("/api/upload", UploadRouter);
 };
 
 module.exports = routes;

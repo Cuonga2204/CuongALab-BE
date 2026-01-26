@@ -270,6 +270,101 @@ const toggleUpvoteReply = async (req, res) => {
   }
 };
 
+// PUT /topic/update/:id
+const updateTopic = async (req, res) => {
+  try {
+    const topicId = req.params.id;
+    const { title, content, userId } = req.body;
+
+    const topic = await ForumTopic.findById(topicId);
+    if (!topic) return errorHandler(res, ERRORS.NOT_FOUND, "Topic not found");
+
+    // ❌ Không phải chủ topic
+    if (String(topic.user_id) !== String(userId)) {
+      return errorHandler(res, ERRORS.FORBIDDEN, "No permission");
+    }
+
+    if (title) topic.title = title;
+    if (content) topic.content = content;
+
+    await topic.save();
+
+    return successHandler(res, topic);
+  } catch (err) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+  }
+};
+
+// DELETE /topic/delete/:id
+const deleteTopic = async (req, res) => {
+  try {
+    const topicId = req.params.id;
+    const { userId } = req.body;
+
+    const topic = await ForumTopic.findById(topicId);
+    if (!topic) return errorHandler(res, ERRORS.NOT_FOUND, "Topic not found");
+
+    if (String(topic.user_id) !== String(userId)) {
+      return errorHandler(res, ERRORS.FORBIDDEN, "No permission");
+    }
+
+    // ❗ Xóa toàn bộ reply thuộc topic
+    await ForumReply.deleteMany({ topic_id: topicId });
+
+    await topic.deleteOne();
+
+    return successHandler(res, { message: "Topic deleted" });
+  } catch (err) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+  }
+};
+
+// PUT /reply/update/:id
+const updateReply = async (req, res) => {
+  try {
+    const replyId = req.params.id;
+    const { content, userId } = req.body;
+
+    const reply = await ForumReply.findById(replyId);
+    if (!reply) return errorHandler(res, ERRORS.NOT_FOUND, "Reply not found");
+
+    if (String(reply.user_id) !== String(userId)) {
+      return errorHandler(res, ERRORS.FORBIDDEN, "No permission");
+    }
+
+    reply.content = content;
+    await reply.save();
+
+    return successHandler(res, reply);
+  } catch (err) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+  }
+};
+
+// DELETE /reply/delete/:id
+const deleteReply = async (req, res) => {
+  try {
+    const replyId = req.params.id;
+    const { userId } = req.body;
+
+    const reply = await ForumReply.findById(replyId);
+    if (!reply) return errorHandler(res, ERRORS.NOT_FOUND, "Reply not found");
+
+    if (String(reply.user_id) !== String(userId)) {
+      return errorHandler(res, ERRORS.FORBIDDEN, "No permission");
+    }
+
+    // ❗ Xóa reply con
+    await ForumReply.deleteMany({ parent_id: replyId });
+
+    await reply.deleteOne();
+
+    return successHandler(res, { message: "Reply deleted" });
+  } catch (err) {
+    return errorHandler(res, ERRORS.INTERNAL_SERVER_ERROR, err.message);
+  }
+};
+
 /* =====================================================
    EXPORT
 ===================================================== */
@@ -282,4 +377,8 @@ module.exports = {
   createReply,
   toggleUpvoteTopic,
   toggleUpvoteReply,
+  updateTopic,
+  deleteTopic,
+  updateReply,
+  deleteReply,
 };
